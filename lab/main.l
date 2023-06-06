@@ -1,4 +1,4 @@
-{
+%{
 #include "main.tab.h"
 %}
 
@@ -8,7 +8,7 @@
 Var     {return VAR;}
 ==      {return EQ;}
 IF      {return IF;}
-ELSE      {return ELSE;}
+ELSE    {return ELSE;}
 THEN    {return THEN;}
 Begin   {return BEGIN_T;}
 End     {return END;}

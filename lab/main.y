@@ -1,5 +1,5 @@
 %{
-# include <stdio.h>
+    # include <stdio.h>
 # include <stdlib.h>
 # include <stdbool.h>
 # include <string.h>
@@ -215,7 +215,7 @@ static void tree_to_asm(struct tree *cur, FILE* fl) {
         fprintf(fl, "END_CYCLE_%d:\n", cycle);
     }
 }
-
+int yylex();
 void main();
 %}
 
@@ -230,47 +230,44 @@ void main();
 %token<num> CONST 
 %token VAR EQ IF THEN ELSE BEGIN_T END
 %type<node> program vars var_list calculation_disc operators_list operator assignment
-%type<node> expression unexpression bin_op operand complex_op if_op compose_op
+%type<node> expression underexpression bin_op operand complex_op compose_op
+
+%left '+' '-'
+%left '*' '/'
 %%
 
-program: vars calculation_disc ';' {
-        $$ = new_tree_node("program", new_tree_node("vars", $1, NULL), NULL);
-        $$->child->next = $2;
-        FILE* fl = fopen("tree.tr", "w");
-        FILE* fl2 = fopen("code.s", "w");
-        print_tree($$, 0, fl);
-        tree_to_asm($$, fl2);
-        fprintf(fl2, "ebreak\n");
-        fclose(fl);
-        fclose(fl2);};
+program: vars calculation_disc ';' {$$ = new_tree_node("program", new_tree_node("vars", $1, NULL), NULL);
+                                $$->child->next = $2;
+                                FILE* fl = fopen("tree.tr", "w");
+                                FILE* fl2 = fopen("code.s", "w");
+                                print_tree($$, 0, fl);
+                                tree_to_asm($$, fl2);
+                                fprintf(fl2, "ebreak\n");
+                                fclose(fl);
+                                fclose(fl2);};
 
-vars: VAR var_list {$$ = $2;}
-    | VAR var_list vars {$$ = $2;
-                        struct tree* cur = $2;
-                        while (cur->next != NULL)
-                            cur = cur->next;
-                        cur->next = $3;}
+vars: VAR var_list {$$ = $2;};
 
 var_list: IDENT {$$ = new_tree_node($1, NULL, NULL);}
-        | IDENT ',' var_list {$$ = new_tree_node($1, NULL, NULL);
-                                $$->next = $3;};
+    | IDENT ',' var_list {$$ = new_tree_node($1, NULL, NULL); $$->next = $3;};
 
 calculation_disc: operators_list {$$=new_tree_node("Calculations", $1, NULL);};
-operators_list: operator {$$=$1;}
-            | operator operators_list {$$=$1;
-                                        $$->next = $2;};
-operator: assignment {$$=new_tree_node("=", $1, NULL);}
-        | complex_op {$$=$1;};
 
-assignment: IDENT '=' expression {$$=new_tree_node($1, NULL, $3);};
-expression: UNARY unexpression {$$=new_tree_node("not", $2, NULL);}
-        | '-' unexpression {$$=new_tree_node("-", $2, NULL);}
-        | unexpression {$$=$1;};
-unexpression: '(' expression ')' {$$=$2;}
-        | operand {$$=$1;}
-        | unexpression bin_op unexpression {$$=$2;
-                                            $$->child = $1;
-                                            $$->child->next = $3;};
+operators_list: operator {$$=$1;}
+    | operator operators_list {$$=$1; $$->next = $2;};
+
+operator: assignment {$$=new_tree_node("=", $1, NULL);}
+    | complex_op {$$=$1;};
+
+assignment: IDENT ":=" expression ';' {$$=new_tree_node($1, NULL, $3);};
+
+expression: '-' underexpression {$$=new_tree_node("-", $2, NULL);}
+    | underexpression {$$=$1;};
+
+underexpression: '(' expression ')' {$$=$2;}
+    | operand {$$=$1;}
+    | underexpression bin_op underexpression {$$=$2; $$->child = $1; $$->child->next = $3;};
+
 bin_op: '-' {$$=new_tree_node("-", NULL, NULL);}
     | '+' {$$=new_tree_node("+", NULL, NULL);}
     | '*' {$$=new_tree_node("*", NULL, NULL);}
@@ -278,13 +275,14 @@ bin_op: '-' {$$=new_tree_node("-", NULL, NULL);}
     | '<' {$$=new_tree_node("<", NULL, NULL);}
     | '>' {$$=new_tree_node(">", NULL, NULL);}
     | EQ {$$=new_tree_node("==", NULL, NULL);};
-operand: IDENT {$$ = new_tree_node($1, NULL, NULL);}
-        | CONST {$$ = new_tree_node_int($1, NULL, NULL);};
 
-complex_op: cycle_op {$$=$1;}
-        | compose_op {$$=new_tree_node("composed", $1, NULL);};
-cycle_op: WHILE expression DO operator {$$=new_tree_node("while", $2, NULL);
-                                        $$->child->next = $4;};
+operand: IDENT {$$ = new_tree_node($1, NULL, NULL);}
+    | CONST {$$ = new_tree_node_int($1, NULL, NULL);};
+
+complex_op: IF expression THEN operator {$$=new_tree_node("if", $2, NULL);
+                                        $$->child->next = $4;}
+    | compose_op {$$=new_tree_node("composed", $1, NULL);};
+
 compose_op: BEGIN_T operators_list END {$$=$2;};
 
 %%
