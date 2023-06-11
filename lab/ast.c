@@ -5,7 +5,7 @@
 # include <string.h>
 # include "ast.h"
 
-#define YYERROR_VERBOSE 1
+// #define YYERROR_VERBOSE 1
 
 void yyerror(char *s, ...) {
   va_list ap;
@@ -16,188 +16,210 @@ void yyerror(char *s, ...) {
   fprintf(stderr, "\n");
 }
 
-struct tree *new_tree_node (char *text, struct tree *child, struct tree *next){
-    struct tree *node = malloc(sizeof(struct tree));
-    node->text = text;
-    node->child = child;
-    node->next = next;
+char *alloc_string(char *str) {
+    if (!str) return NULL;
+    char *string = (char*) malloc(sizeof(char) * strlen(str) + 1);
+    memset(string, 0, strlen(str) + 1);
+    memcpy(string, str, strlen(str) + 1);
+    return string;
+}
+
+variable *create_variable(char *name, int value) {
+    if (!name) return NULL;
+    variable *var = (variable*) malloc(sizeof(variable));
+    var->name = alloc_string(name);
+    var->value = value;
+    return var;
+}
+
+void delete_variable(variable *var) {
+    if (!var || !var->name) return;
+    var->value = 0;
+    free(var->name);
+    free(var);
+}
+
+ast_node *create_ast_node() {
+    ast_node *node = (ast_node*) malloc(sizeof(ast_node));
+    node->num_of_branches = 0;
+    node->branches = NULL;
     return node;
 }
 
-struct tree *new_tree_node_int (int num, struct tree *child, struct tree *next){
-    struct tree *node = malloc(sizeof(struct tree));
-    node->text = NULL;
-    node->num = num;
-    node->child = child;
-    node->next = next;
+ast_node *create_ast_node_lit(int int_value) {
+    ast_node *node = create_ast_node();
+    node->node_type = NODE_TYPE_LITERAL;
+    node->int_val = int_value;
     return node;
 }
 
-void print_tree(struct tree *cur, int lvl, FILE* fl) {
-    for(int i = 0; i < lvl; i++) fprintf(fl, "  ");
-    if (cur->text)
-        fprintf(fl, "%s\n", cur->text);
-    else
-        fprintf(fl, "n: %d\n", cur->num);
-    if (cur->child != NULL)
-      print_tree(cur->child, lvl + 1, fl);
-    if (cur->next != NULL)
-      print_tree(cur->next, lvl, fl);
+ast_node *create_ast_node_var(char *name) {
+    if (!name) return NULL;
+    ast_node *node = create_ast_node();
+    node->node_type = NODE_TYPE_VARIABLE;
+    node->var_name = alloc_string(name);
+    return node;
 }
 
-static struct vars_adresses* table = NULL;
-
-void add_var(char* var, int adress) {
-    if (table == NULL)
-    {
-        table = malloc(sizeof(struct vars_adresses));
-        table->next = NULL;
-        table->var = var;
-        table->addr = adress;
-    }
-    else
-    {
-        struct vars_adresses* table_cur = table;
-        while (table_cur->next != NULL)
-            table_cur = table_cur->next;
-        table_cur->next = malloc(sizeof(struct vars_adresses));
-        table_cur->next->next = NULL;
-        table_cur->next->var = var;
-        table_cur->next->addr = adress;
-    }
+ast_node *create_ast_node_op(int operation) {
+    ast_node *node = create_ast_node();
+    node->node_type = NODE_TYPE_OPERATION;
+    node->operation = operation;
+    return node;
 }
 
-int get_var(char* var){
-    struct vars_adresses* table_cur = table;
-    while (table_cur != NULL)
-    {
-        if (strcmp(table_cur->var, var) == 0)
-            return table_cur->addr;
-        table_cur = table_cur->next;
-    }
-    return -1;
+ast_node *create_ast_node_var_def(char *name) {
+    if (!name) return NULL;
+    ast_node *node = create_ast_node();
+    node->node_type = NODE_TYPE_VAR_DEF;
+    node->var = create_variable(name, 0);
+    return node;
 }
 
-void translate_vars(struct tree *cur, FILE* fl, int num){
-    fprintf(fl, "%s:\ndata 0 * 1\n", cur->text);
-    add_var(cur->text, num);
-    if (cur->next)
-        translate_vars(cur->next, fl, num + 1);
+ast_node *create_ast_node_root() {
+    ast_node *node = create_ast_node();
+    node->node_type = NODE_TYPE_OP_ROOT;
+    return node;
 }
 
-int translate_expression(struct tree *cur, FILE* fl, int you_ind){
-    if (cur->text == NULL)
-    {
-        fprintf(fl, "addi x%d, x0, %d\n", you_ind, cur->num);
-        return you_ind + 1;
-    }
-    else if (strcmp(cur->text, "not") == 0)
-    {
-        int end_ind = translate_expression(cur->child, fl, you_ind + 1);
-        fprintf(fl, "xori x%d, x%d, 4095\n", you_ind, you_ind + 1);
-        return end_ind;
-    }
-    else if (strcmp(cur->text, "+") == 0)
-    {
-        int end_ind1 = translate_expression(cur->child, fl, you_ind + 1);
-        int end_ind2 = translate_expression(cur->child->next, fl, end_ind1);
-        fprintf(fl, "add x%d, x%d, x%d\n", you_ind, you_ind + 1, end_ind1);
-        return end_ind2;
-    }
-    else if (strcmp(cur->text, "-") == 0)
-    {
-        if (cur->child->next == NULL)
-        {
-            int end_ind = translate_expression(cur->child, fl, you_ind + 1);
-            fprintf(fl, "sub x%d, x0, x%d\n", you_ind, you_ind + 1);
-            return end_ind;
-        }
-        else
-        {
-            int end_ind1 = translate_expression(cur->child, fl, you_ind + 1);
-            int end_ind2 = translate_expression(cur->child->next, fl, end_ind1);
-            fprintf(fl, "sub x%d, x%d, x%d\n", you_ind, you_ind + 1, end_ind1);
-            return end_ind2;
-        }
-    }
-    else if (strcmp(cur->text, "*") == 0)
-    {
-        int end_ind1 = translate_expression(cur->child, fl, you_ind + 1);
-        int end_ind2 = translate_expression(cur->child->next, fl, end_ind1);
-        fprintf(fl, "mul x%d, x%d, x%d\n", you_ind, you_ind + 1, end_ind1);
-        return end_ind2;
-    }
-    else if (strcmp(cur->text, "/") == 0)
-    {
-        int end_ind1 = translate_expression(cur->child, fl, you_ind + 1);
-        int end_ind2 = translate_expression(cur->child->next, fl, end_ind1);
-        fprintf(fl, "div x%d, x%d, x%d\n", you_ind, you_ind + 1, end_ind1);
-        return end_ind2;
-    }
-    else
-    {
-        fprintf(fl, "lw x%d, x0, %d\n", you_ind, get_var(cur->text));
-        return you_ind + 1;
-    }
-    return you_ind;
+ast_node *create_ast_node_program_root() {
+    ast_node *node = create_ast_node();
+    node->node_type = NODE_TYPE_PROGRAM_ROOT;
+    return node;
 }
 
-static int cycles_count = 0;
+void add_child(ast_node *node, ast_node *child) {
+    node->num_of_branches++;
+    ast_node **new_nodes = (ast_node**) malloc(sizeof(ast_node*) * node->num_of_branches);
+    for (size_t i = 0; i < node->num_of_branches - 1; i++)
+        new_nodes[i] = node->branches[i];
+    new_nodes[node->num_of_branches - 1] = child;
+    if (node->branches) free(node->branches);
+    node->branches = new_nodes;
+}
 
-void tree_to_asm(struct tree *cur, FILE* fl) {
-    if (cur == NULL)
-        return;
-    if (cur->text == NULL)
-        fprintf(fl, ";strange\n");
-    else if (strcmp(cur->text, "program") == 0)
-    {
-        fprintf(fl, "jal x1, MAIN\n");
-        tree_to_asm(cur->child, fl);
-        tree_to_asm(cur->child->next, fl);
+void print_ast(FILE *file, ast_node *node, size_t tabs) {
+    if (!node) return;
+
+    char *tabs_line = (char*) malloc(tabs + 1);
+    memset(tabs_line, '\t', tabs);
+    tabs_line[tabs] = 0;
+
+    char *node_type;
+    switch (node->node_type) {
+        case NODE_TYPE_PROGRAM_ROOT:
+            node_type = "program_root";
+            break;
+        case NODE_TYPE_OP_ROOT:
+            node_type = "operation_root";
+            break;
+        case NODE_TYPE_OPERATION:
+            node_type = "operation";
+            break;
+        case NODE_TYPE_LITERAL:
+            node_type = "literal";
+            break;
+        case NODE_TYPE_VARIABLE:
+            node_type = "variable";
+            break;
+        case NODE_TYPE_VAR_DEF:
+            node_type = "variable_def";
+            break;
     }
-    else if (strcmp(cur->text, "Calculations") == 0)
-    {
-        fprintf(fl, "MAIN:\n");
-        tree_to_asm(cur->child, fl);
+
+    fprintf(file, "%s{\n%s\tnode_type: %s,\n", tabs_line, tabs_line, node_type);
+
+    switch (node->node_type) {
+        case NODE_TYPE_OPERATION:
+            fprintf(file, "%s\toperation: %c,\n", tabs_line, node->operation);
+            break;
+        case NODE_TYPE_LITERAL:
+            fprintf(file, "%s\tint_value: %d,\n", tabs_line, node->int_val);
+            break;
+        case NODE_TYPE_VARIABLE:
+            fprintf(file, "%s\tvariable_name: %s,\n", tabs_line, node->var_name);
+            break;
+        case NODE_TYPE_VAR_DEF:
+            fprintf(file, "%s\tvariable_name: %s,\n%s\tvariable_value: %d,\n", tabs_line, node->var->name, tabs_line, node->var->value);
+            break;
     }
-    else if (strcmp(cur->text, "=") == 0)
-    {
-        translate_expression(cur->child->next, fl, 1);
-        fprintf(fl, "sw x0, %d, x1\n", get_var(cur->child->text));
-        tree_to_asm(cur->next, fl);
+
+    fprintf(file, "%s\tnum_of_branches: %zd,\n%s\tbranches:\n%s\t[\n", tabs_line, node->num_of_branches, tabs_line, tabs_line);
+
+    for (size_t i = 0; i < node->num_of_branches; i++)
+        print_ast(file, node->branches[i], tabs + 2);
+
+    fprintf(file, "%s\t]\n%s}\n", tabs_line, tabs_line);
+
+    free(tabs_line);
+}
+
+void delete_ast_node(ast_node *node) {
+    if (!node) return;
+    if (node->node_type == NODE_TYPE_VARIABLE) free(node->var_name);
+    if (node->node_type == NODE_TYPE_VAR_DEF) delete_variable(node->var);
+    for (size_t i = 0; i < node->num_of_branches; i++)
+        delete_ast_node(node->branches[i]);
+    node->num_of_branches = 0;
+    free(node->branches);
+    free(node);
+}
+
+int eval_literals(ast_node *node) {
+    if (!node) return 0;
+    if (node->node_type == NODE_TYPE_LITERAL) return node->int_val;
+    if (node->node_type != NODE_TYPE_OPERATION) return 0;
+    switch (node->operation) {
+        case '+':
+            if (node->num_of_branches != 2) return 0;
+            else return eval_literals(node->branches[0]) + eval_literals(node->branches[1]);
+        case '-':
+            if (node->num_of_branches == 1)
+                return -eval_literals(node->branches[0]);
+            else
+                if (node->num_of_branches == 2)
+                    return eval_literals(node->branches[0]) - eval_literals(node->branches[1]);
+            else return 0;
+        case '*':
+            if (node->num_of_branches != 2) return 0;
+            else return eval_literals(node->branches[0]) * eval_literals(node->branches[1]);
+        case '/':
+            if (node->num_of_branches != 2) return 0;
+            else return eval_literals(node->branches[0]) / eval_literals(node->branches[1]);
+        case 'N':
+            if (node->num_of_branches != 1) return 0;
+            else return !eval_literals(node->branches[0]);
+        case '>':
+            if (node->num_of_branches != 2) return 0;
+            else return eval_literals(node->branches[0]) > eval_literals(node->branches[1]);
+        case '<':
+            if (node->num_of_branches != 2) return 0;
+            else return eval_literals(node->branches[0]) < eval_literals(node->branches[1]);
+        case 'E':
+            if (node->num_of_branches != 2) return 0;
+            else return eval_literals(node->branches[0]) == eval_literals(node->branches[1]);
+        case 'A':
+            if (node->num_of_branches != 2) return 0;
+            else return eval_literals(node->branches[1]);
     }
-    else if (strcmp(cur->text, "vars") == 0)
-        translate_vars(cur->child, fl, 1);
-    else if (strcmp(cur->text, "composed") == 0)
-    {
-        tree_to_asm(cur->child, fl);
-        tree_to_asm(cur->next, fl);
-    }
-    else if (strcmp(cur->text, "while") == 0)
-    {
-        int cycle = cycles_count++;
-        fprintf(fl, "START_CYCLE_%d:\n", cycle);
-        int end_ind1 = translate_expression(cur->child->child, fl, 1);
-        int end_ind2 = translate_expression(cur->child->child->next, fl, end_ind1);
-        if (strcmp(cur->child->text, ">") == 0)
-        {
-            fprintf(fl, "blt x%d, x%d, END_CYCLE_%d\n", 1, end_ind1, cycle);
-            fprintf(fl, "beq x%d, x%d, END_CYCLE_%d\n", 1, end_ind1, cycle);
-        } else if (strcmp(cur->child->text, "<") == 0)
-        {
-            fprintf(fl, "bge x%d, x%d, END_CYCLE_%d\n", 1, end_ind1, cycle);
-            fprintf(fl, "beq x%d, x%d, END_CYCLE_%d\n", 1, end_ind1, cycle);
-        } else if (strcmp(cur->child->text, "==") == 0)
-        {
-            fprintf(fl, "bne x%d, x%d, END_CYCLE_%d\n", 1, end_ind1, cycle);
-        }
-        tree_to_asm(cur->child->next, fl);
-        fprintf(fl, "jal x1, START_CYCLE_%d\n", cycle);  
-        fprintf(fl, "END_CYCLE_%d:\n", cycle);
+    return 0;
+}
+
+void try_eval(ast_node *node) {
+    if (!node) return;
+    if (node->node_type == NODE_TYPE_OPERATION) {
+        for (size_t i = 0; i < node->num_of_branches; i++)
+            if (node->branches[i]->node_type != NODE_TYPE_LITERAL) return;
+        int eval_res = eval_literals(node);
+        for (size_t i = 0; i < node->num_of_branches; i++)
+            delete_ast_node(node->branches[i]);
+        node->node_type = NODE_TYPE_LITERAL;
+        node->num_of_branches = 0;
+        node->int_val = eval_res;
     }
 }
 
 int main() {
   printf("> "); 
-  return yyparse();
+  return yyparse(FILENAME);
 }

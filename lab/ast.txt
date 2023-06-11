@@ -1,0 +1,56 @@
+{
+	node_type: program_root,
+	num_of_branches: 2,
+	branches:
+	[
+		{
+			node_type: variable_def,
+			variable_name: a,
+			variable_value: 0,
+			num_of_branches: 1,
+			branches:
+			[
+				{
+					node_type: variable_def,
+					variable_name: b,
+					variable_value: 0,
+					num_of_branches: 0,
+					branches:
+					[
+					]
+				}
+			]
+		}
+		{
+			node_type: operation_root,
+			num_of_branches: 1,
+			branches:
+			[
+				{
+					node_type: operation,
+					operation: A,
+					num_of_branches: 2,
+					branches:
+					[
+						{
+							node_type: variable,
+							variable_name: a,
+							num_of_branches: 0,
+							branches:
+							[
+							]
+						}
+						{
+							node_type: variable,
+							variable_name: b,
+							num_of_branches: 0,
+							branches:
+							[
+							]
+						}
+					]
+				}
+			]
+		}
+	]
+}

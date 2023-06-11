@@ -1,6 +1,7 @@
 %option noyywrap nodefault yylineno
 
 %{
+#include <stdio.h>
 #include "main.tab.h"
 #include "ast.h"
 %}
@@ -23,13 +24,15 @@ End     {return END;}
 "/" {return DIV;}
 "(" {return LCBR;}
 ")" {return RCBR;}
+"{" {return LBR;}
+"}" {return RBR;}
 ">" {return GREATER;}
 "<"  {return LESS;}
 ==      {return EQ;}
 ";" {return SEMICOLON;}
 "," {return COMMA;}
 
-[a-z]+  { yylval.text = strdup(yytext); return IDENT;} /* <Идент> */
+[a-z]+  { sscanf(yytext,"%s", yylval.text); return IDENT;} /* <Идент> */
 [0-9]+	{ yylval.num = atoi(yytext); return CONST; } /* <Сonst> */
 
 [ \t\r\n]       ; // whitespace
