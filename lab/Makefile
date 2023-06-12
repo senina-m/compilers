@@ -13,3 +13,4 @@ clean:
 		rm -rf *.tab.c
 		rm -rf *.yy.c
 		rm build_ast
+		rm test_grammer

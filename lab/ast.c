@@ -1,8 +1,3 @@
-# include <stdio.h>
-# include <stdlib.h>
-# include <stdbool.h>
-#  include <stdarg.h>
-# include <string.h>
 # include "ast.h"
 
 // #define YYERROR_VERBOSE 1
