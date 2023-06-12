@@ -1,16 +1,15 @@
 Var a, b, c;
 Begin
-	a ::= -2;
-	b ::= a;
-	c ::= (a + b) / 5;
-	IF (a > c) THEN a = 0;
-	c ::= a == b;
-	b ::= (b - c)* a;
-	IF (b > c) THEN a = 0;
+	a := -2;
+	b := a;
+	c := a + b / 5;
+	c := a == b;
+	b := (b - c)* a;
+	IF (b > c) THEN a := 0
 	ELSE Begin
-		a = -1;
+		a := -1;
 	End
 
-	if (a < c) THEN a = 10;
-	ELSE a = -10;
+	IF (a < c) THEN a := 10
+	ELSE a := -10;
 End

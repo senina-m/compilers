@@ -9,7 +9,7 @@ extern int yylex();
 
 %token VAR IF THEN ELSE BEGIN_T END
 %token ASSIGN
-%token MINUS PLUS MULT DIV LESS GREATER EQ
+%token MINUS PLUS MULT DIV LESS GREATER
 %token LCBR RCBR
 %token LBR RBR
 %token SEMICOLON COMMA
@@ -44,7 +44,7 @@ vars: VAR var_list SEMICOLON        {$$ = $2;};
 var_list: IDENT                     {$$ = create_ast_node_var_def($1);}
     | IDENT COMMA var_list          {$$ = create_ast_node_var_def($1); add_child($$, $3);};
 
-calculation: operator               {$$ = create_ast_node_root(); add_child($$, $1);};
+calculation: operator SEMICOLON     {$$ = create_ast_node_root(); add_child($$, $1);};
     | calculation operator SEMICOLON {$$ = $1; add_child($$, $2);};
 
 operator: assignment                {$$ = $1;}
@@ -58,14 +58,14 @@ assignment: IDENT ASSIGN expression {$$ = create_ast_node_op('A');
 
 expression: operand                 {$$ = $1;}
     | LCBR expression RCBR          {$$ = $2;}
-    | LCBR MINUS expression RCBR    {$$ = create_ast_node_op('-'); add_child($$, $3); try_eval($3);}
+    | MINUS expression              {$$ = create_ast_node_op('-'); add_child($$, $2); try_eval($2);}
     | expression MINUS expression   {$$ = create_ast_node_op('*'); add_child($$, $1); add_child($$, $3); try_eval($1); try_eval($3);}
     | expression PLUS expression    {$$ = create_ast_node_op('+'); add_child($$, $1); add_child($$, $3); try_eval($1); try_eval($3);}
     | expression MULT expression    {$$ = create_ast_node_op('*'); add_child($$, $1); add_child($$, $3); try_eval($1); try_eval($3);}
     | expression DIV expression     {$$ = create_ast_node_op('/'); add_child($$, $1); add_child($$, $3); try_eval($1); try_eval($3);}
     | expression GREATER expression {$$ = create_ast_node_op('>'); add_child($$, $1); add_child($$, $3); try_eval($1); try_eval($3);}
     | expression LESS expression    {$$ = create_ast_node_op('<'); add_child($$, $1); add_child($$, $3); try_eval($1); try_eval($3);}
-    | expression EQUALS expression   {$$ = create_ast_node_op('=='); add_child($$, $1); add_child($$, $3); try_eval($1); try_eval($3);};
+    | expression EQUALS expression   {$$ = create_ast_node_op('E'); add_child($$, $1); add_child($$, $3); try_eval($1); try_eval($3);};
 
 
 operand: IDENT {$$ = create_ast_node_var($1);}

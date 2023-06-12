@@ -47,6 +47,7 @@ ast_node *create_ast_node() {
 }
 
 ast_node *create_ast_node_lit(int int_value) {
+    printf("create_ast_node_lit val=%i\n", int_value);
     ast_node *node = create_ast_node();
     node->node_type = NODE_TYPE_LITERAL;
     node->int_val = int_value;
@@ -54,6 +55,7 @@ ast_node *create_ast_node_lit(int int_value) {
 }
 
 ast_node *create_ast_node_var(char *name) {
+    printf("create_ast_node_var name=%s\n", name);
     if (!name) return NULL;
     ast_node *node = create_ast_node();
     node->node_type = NODE_TYPE_VARIABLE;
@@ -62,6 +64,7 @@ ast_node *create_ast_node_var(char *name) {
 }
 
 ast_node *create_ast_node_op(int operation) {
+    printf("create_ast_node_op op=%c\n", operation);
     ast_node *node = create_ast_node();
     node->node_type = NODE_TYPE_OPERATION;
     node->operation = operation;
@@ -69,6 +72,7 @@ ast_node *create_ast_node_op(int operation) {
 }
 
 ast_node *create_ast_node_var_def(char *name) {
+    printf("create_ast_node_var_def name=%s\n", name);
     if (!name) return NULL;
     ast_node *node = create_ast_node();
     node->node_type = NODE_TYPE_VAR_DEF;
@@ -77,18 +81,21 @@ ast_node *create_ast_node_var_def(char *name) {
 }
 
 ast_node *create_ast_node_root() {
+    printf("create_ast_node_root\n");
     ast_node *node = create_ast_node();
     node->node_type = NODE_TYPE_OP_ROOT;
     return node;
 }
 
 ast_node *create_ast_node_program_root() {
+    printf("create_ast_node_program_root\n");
     ast_node *node = create_ast_node();
     node->node_type = NODE_TYPE_PROGRAM_ROOT;
     return node;
 }
 
 void add_child(ast_node *node, ast_node *child) {
+    printf("add_child type=%i\n", child->node_type);
     node->num_of_branches++;
     ast_node **new_nodes = (ast_node**) malloc(sizeof(ast_node*) * node->num_of_branches);
     for (size_t i = 0; i < node->num_of_branches - 1; i++)

@@ -16,7 +16,7 @@ THEN    {return THEN;}
 Begin   {return BEGIN_T;}
 End     {return END;}
 
-":="     {return ASSIGN;}
+":=" {return ASSIGN;}
 
 "+" {return PLUS;}
 "-" {return MINUS;}
@@ -28,14 +28,14 @@ End     {return END;}
 "}" {return RBR;}
 ">" {return GREATER;}
 "<"  {return LESS;}
-==      {return EQ;}
+"==" {return EQUALS;}
 ";" {return SEMICOLON;}
 "," {return COMMA;}
 
 [a-z]+  { sscanf(yytext,"%s", yylval.text); return IDENT;} /* <Идент> */
 [0-9]+	{ yylval.num = atoi(yytext); return CONST; } /* <Сonst> */
 
-[ \t\r\n]       ; // whitespace
+[ \t\r\n] ; // whitespace
 .	{ yyerror("Mystery character \"%c\"\n", *yytext); }
 
 %%
