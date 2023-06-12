@@ -30,14 +30,14 @@ extern int yylex();
 %%
 program: vars calculation SEMICOLON     {   FILE* f_ast = fopen(FILENAME_AST, "w");
                                             FILE* f_asm = fopen(FILENAME_ASM, "w");
-                                            $$ = create_node("programm root");
+                                            $$ = create_node("programm");
                                             add_child($$, $1);
                                             add_child($$, $2);
                                             print_ast(f_ast, $$, 0);
-                                            print_asm(f_asm, $$);
-                                            delete_node($$);
                                             if (f_ast) fclose(f_ast);
+                                            print_asm(f_asm, $$);
                                             if (f_asm) fclose(f_asm);
+                                            delete_node($$);
                                         };
 
 vars: VAR var_list SEMICOLON            {$$ = $2;};
@@ -45,7 +45,7 @@ vars: VAR var_list SEMICOLON            {$$ = $2;};
 var_list: IDENT                         {$$ = create_node($1);}
     | IDENT COMMA var_list              {$$ = create_node($1); add_child($$, $3);};
 
-calculation: operator                   {$$ = create_node("root"); add_child($$, $1);};
+calculation: operator                   {$$ = create_node("calc"); add_child($$, $1);};
     | calculation operator              {$$ = $1; add_child($$, $2);}
 
 operator: assignment SEMICOLON          {$$ = $1;};

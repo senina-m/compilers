@@ -1,1 +1,6 @@
-some asm
+jal x1, MAIN
+a:
+data 0 * 1
+MAIN:
+lw x1, x0, 1
+sw x0, 1, x1
