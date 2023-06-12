@@ -1,7 +1,5 @@
 # include "ast.h"
 
-// #define YYERROR_VERBOSE 1
-
 void yyerror(char *s, ...) {
   va_list ap;
   va_start(ap, s);
@@ -19,209 +17,73 @@ char *alloc_string(char *str) {
     return string;
 }
 
-variable *create_variable(char *name, int value) {
-    if (!name) return NULL;
-    variable *var = (variable*) malloc(sizeof(variable));
-    var->name = alloc_string(name);
-    var->value = value;
-    return var;
-}
+Node *create_node(char* name) {
 
-void delete_variable(variable *var) {
-    if (!var || !var->name) return;
-    var->value = 0;
-    free(var->name);
-    free(var);
-}
-
-ast_node *create_ast_node() {
-    ast_node *node = (ast_node*) malloc(sizeof(ast_node));
-    node->num_of_branches = 0;
-    node->branches = NULL;
+    Node* node = mmalloc(Node);
+    node->name = name;
+    node->children_num = 0;
+    node->children = NULL;
+    printf("node: %s\n", node->name);
     return node;
 }
 
-ast_node *create_ast_node_lit(int int_value) {
-    printf("create_ast_node_lit val=%i\n", int_value);
-    ast_node *node = create_ast_node();
-    node->node_type = NODE_TYPE_LITERAL;
-    node->int_val = int_value;
+Node* create_node_int(int val){
+    printf("val=%i\n", val);
+    Node* node = create_node("#");
+    node->val = val;
     return node;
 }
 
-ast_node *create_ast_node_var(char *name) {
-    printf("create_ast_node_var name=%s\n", name);
-    if (!name) return NULL;
-    ast_node *node = create_ast_node();
-    node->node_type = NODE_TYPE_VARIABLE;
-    node->var_name = alloc_string(name);
-    return node;
-}
-
-ast_node *create_ast_node_op(int operation) {
-    printf("create_ast_node_op op=%c\n", operation);
-    ast_node *node = create_ast_node();
-    node->node_type = NODE_TYPE_OPERATION;
-    node->operation = operation;
-    return node;
-}
-
-ast_node *create_ast_node_var_def(char *name) {
-    printf("create_ast_node_var_def name=%s\n", name);
-    if (!name) return NULL;
-    ast_node *node = create_ast_node();
-    node->node_type = NODE_TYPE_VAR_DEF;
-    node->var = create_variable(name, 0);
-    return node;
-}
-
-ast_node *create_ast_node_root() {
-    printf("create_ast_node_root\n");
-    ast_node *node = create_ast_node();
-    node->node_type = NODE_TYPE_OP_ROOT;
-    return node;
-}
-
-ast_node *create_ast_node_program_root() {
-    printf("create_ast_node_program_root\n");
-    ast_node *node = create_ast_node();
-    node->node_type = NODE_TYPE_PROGRAM_ROOT;
-    return node;
-}
-
-void add_child(ast_node *node, ast_node *child) {
-    printf("add_child type=%i\n", child->node_type);
-    node->num_of_branches++;
-    ast_node **new_nodes = (ast_node**) malloc(sizeof(ast_node*) * node->num_of_branches);
-    for (size_t i = 0; i < node->num_of_branches - 1; i++)
-        new_nodes[i] = node->branches[i];
-    new_nodes[node->num_of_branches - 1] = child;
-    if (node->branches) free(node->branches);
-    node->branches = new_nodes;
-}
-
-void print_ast(FILE *file, ast_node *node, size_t tabs) {
+void delete_node(Node *node) {
     if (!node) return;
-
-    char *tabs_line = (char*) malloc(tabs + 1);
-    memset(tabs_line, '\t', tabs);
-    tabs_line[tabs] = 0;
-
-    char *node_type;
-    switch (node->node_type) {
-        case NODE_TYPE_PROGRAM_ROOT:
-            node_type = "program_root";
-            break;
-        case NODE_TYPE_OP_ROOT:
-            node_type = "operation_root";
-            break;
-        case NODE_TYPE_OPERATION:
-            node_type = "operation";
-            break;
-        case NODE_TYPE_LITERAL:
-            node_type = "literal";
-            break;
-        case NODE_TYPE_VARIABLE:
-            node_type = "variable";
-            break;
-        case NODE_TYPE_VAR_DEF:
-            node_type = "variable_def";
-            break;
-    }
-
-    fprintf(file, "%s{\n%s\tnode_type: %s,\n", tabs_line, tabs_line, node_type);
-
-    switch (node->node_type) {
-        case NODE_TYPE_OPERATION:
-            fprintf(file, "%s\toperation: %c,\n", tabs_line, node->operation);
-            break;
-        case NODE_TYPE_LITERAL:
-            fprintf(file, "%s\tint_value: %d,\n", tabs_line, node->int_val);
-            break;
-        case NODE_TYPE_VARIABLE:
-            fprintf(file, "%s\tvariable_name: %s,\n", tabs_line, node->var_name);
-            break;
-        case NODE_TYPE_VAR_DEF:
-            fprintf(file, "%s\tvariable_name: %s,\n%s\tvariable_value: %d,\n", tabs_line, node->var->name, tabs_line, node->var->value);
-            break;
-    }
-
-    fprintf(file, "%s\tnum_of_branches: %zd,\n%s\tbranches:\n%s\t[\n", tabs_line, node->num_of_branches, tabs_line, tabs_line);
-
-    for (size_t i = 0; i < node->num_of_branches; i++)
-        print_ast(file, node->branches[i], tabs + 2);
-
-    fprintf(file, "%s\t]\n%s}\n", tabs_line, tabs_line);
-
-    free(tabs_line);
-}
-
-void delete_ast_node(ast_node *node) {
-    if (!node) return;
-    if (node->node_type == NODE_TYPE_VARIABLE) free(node->var_name);
-    if (node->node_type == NODE_TYPE_VAR_DEF) delete_variable(node->var);
-    for (size_t i = 0; i < node->num_of_branches; i++)
-        delete_ast_node(node->branches[i]);
-    node->num_of_branches = 0;
-    free(node->branches);
+    for (size_t i = 0; i < node->children_num; i++)
+        delete_node(node->children[i]);
+    free(node->children);
+    // free(node->name);
     free(node);
 }
 
-int eval_literals(ast_node *node) {
-    if (!node) return 0;
-    if (node->node_type == NODE_TYPE_LITERAL) return node->int_val;
-    if (node->node_type != NODE_TYPE_OPERATION) return 0;
-    switch (node->operation) {
-        case '+':
-            if (node->num_of_branches != 2) return 0;
-            else return eval_literals(node->branches[0]) + eval_literals(node->branches[1]);
-        case '-':
-            if (node->num_of_branches == 1)
-                return -eval_literals(node->branches[0]);
-            else
-                if (node->num_of_branches == 2)
-                    return eval_literals(node->branches[0]) - eval_literals(node->branches[1]);
-            else return 0;
-        case '*':
-            if (node->num_of_branches != 2) return 0;
-            else return eval_literals(node->branches[0]) * eval_literals(node->branches[1]);
-        case '/':
-            if (node->num_of_branches != 2) return 0;
-            else return eval_literals(node->branches[0]) / eval_literals(node->branches[1]);
-        case 'N':
-            if (node->num_of_branches != 1) return 0;
-            else return !eval_literals(node->branches[0]);
-        case '>':
-            if (node->num_of_branches != 2) return 0;
-            else return eval_literals(node->branches[0]) > eval_literals(node->branches[1]);
-        case '<':
-            if (node->num_of_branches != 2) return 0;
-            else return eval_literals(node->branches[0]) < eval_literals(node->branches[1]);
-        case 'E':
-            if (node->num_of_branches != 2) return 0;
-            else return eval_literals(node->branches[0]) == eval_literals(node->branches[1]);
-        case 'A':
-            if (node->num_of_branches != 2) return 0;
-            else return eval_literals(node->branches[1]);
-    }
-    return 0;
+void add_child(Node* node, Node* child) {
+    printf("%s -> %s\n", node->name, child->name);
+    node->children_num++;
+    Node** nodes = mmalloc_array(Node, node->children_num);
+    for (size_t i = 0; i < node->children_num - 1; i++)
+        nodes[i] = node->children[i];
+    nodes[node->children_num - 1] = child;
+    if (node->children) free(node->children);
+    node->children = nodes;
 }
 
-void try_eval(ast_node *node) {
+static void print_tabs(FILE* f, size_t tabs){
+    for(int i = 0; i < tabs; i++)
+        fprintf(f, "\t");
+}
+
+
+void print_ast(FILE* f_ast, Node *node, size_t tabs) {
     if (!node) return;
-    if (node->node_type == NODE_TYPE_OPERATION) {
-        for (size_t i = 0; i < node->num_of_branches; i++)
-            if (node->branches[i]->node_type != NODE_TYPE_LITERAL) return;
-        int eval_res = eval_literals(node);
-        for (size_t i = 0; i < node->num_of_branches; i++)
-            delete_ast_node(node->branches[i]);
-        node->node_type = NODE_TYPE_LITERAL;
-        node->num_of_branches = 0;
-        node->int_val = eval_res;
-    }
+    print_tabs(f_ast, tabs);
+    
+    if (node->name[0] == '#') fprintf(f_ast, "%s(%i)\n", node->name, node->val);
+    else fprintf(f_ast, "%s\n", node->name);
+
+    for (size_t i = 0; i < node->children_num; i++)
+        print_ast(f_ast, node->children[i], tabs + 1);
+}
+
+void print_asm(FILE* f_asm, Node *node) {
+    if (!node) return;
+    fprintf(f_asm, "some asm");
+
+    
+    // if (strcmp(node->name, "int")) fprintf(f_asm, "%s\n", node->name);
+    // else fprintf(f_asm, "%s(%i)\n", node->name, node->val);
+
+    // for (size_t i = 0; i < node->children_num; i++)
+    //     print_asm(f_asm, node->children[i]);
 }
 
 int main() {
   printf("> "); 
-  return yyparse(FILENAME);
+  return yyparse(FILENAME_AST, FILENAME_ASM);
 }

@@ -4,46 +4,28 @@
 # include <stdarg.h>
 # include <string.h>
 
-#define FILENAME "/home/marsen/itmo/compilers/lab/ast.txt"
+#define FILENAME_AST "/home/marsen/itmo/compilers/lab/ast.txt"
+#define FILENAME_ASM "/home/marsen/itmo/compilers/lab/asm.txt"
 
-#define NODE_TYPE_PROGRAM_ROOT (-1)
-#define NODE_TYPE_OP_ROOT 0
-#define NODE_TYPE_OPERATION 1
-#define NODE_TYPE_LITERAL 2
-#define NODE_TYPE_VARIABLE 3
-#define NODE_TYPE_VAR_DEF 4
+#define mmalloc(T) ((T*)malloc(sizeof(T)))
+#define mmalloc_array(T, count) ((T**)malloc(sizeof(T)*count))
 
-typedef struct variable {
-    char *name;
-    int value;
-} variable;
-
-typedef struct ast_node {
-    size_t num_of_branches;
-    struct ast_node **branches;
-    int node_type;
-    union {
-        int operation; // A - assign, N - not, E - equals, O - output
-        int int_val;
-        char *var_name;
-        variable *var;
-    };
-} ast_node;
+typedef struct Node {
+    size_t children_num;
+    struct Node **children;
+    char* name;
+    int val;
+} Node;
 
 void yyerror(char *s, ...);
 extern int yylineno;
 int yylex();
 
-variable *create_variable(char *name, int value);
-void delete_variable(variable *var);
-ast_node *create_ast_node_lit(int int_value);
-ast_node *create_ast_node_var(char *name);
-ast_node *create_ast_node_op(int operation);
-ast_node *create_ast_node_var_def(char *name);
-ast_node *create_ast_node_root();
-ast_node *create_ast_node_program_root();
-void add_child(ast_node *node, ast_node *child);
-void print_ast(FILE *file, ast_node *node, size_t tabs);
-void delete_ast_node(ast_node *node);
-int eval_literals(ast_node *node);
-void try_eval(ast_node *node);
+Node* create_node(char* name);
+Node* create_node_int(int val);
+void delete_node(Node *node);
+
+void add_child(Node *node, Node *child);
+void print_ast(FILE* f_ast, Node* node, size_t tabs);
+void print_asm(FILE* f_asm, Node* node);
+

@@ -32,7 +32,7 @@ End     {return END;}
 ";" {return SEMICOLON;}
 "," {return COMMA;}
 
-[a-z]+  { sscanf(yytext,"%s", yylval.text); return IDENT;} /* <Идент> */
+[a-z]+  { yylval.text = strdup(yytext); return IDENT; return IDENT;} /* <Идент> */
 [0-9]+	{ yylval.num = atoi(yytext); return CONST; } /* <Сonst> */
 
 [ \t\r\n] ; // whitespace
