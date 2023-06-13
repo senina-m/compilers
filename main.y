@@ -36,6 +36,7 @@ program: vars calculation SEMICOLON     {   FILE* f_ast = fopen(FILENAME_AST, "w
                                             print_ast(f_ast, $$, 0);
                                             if (f_ast) fclose(f_ast);
                                             print_asm(f_asm, $$);
+                                            fprintf(f_asm, "ebreak\n");
                                             if (f_asm) fclose(f_asm);
                                             delete_node($$);
                                         };

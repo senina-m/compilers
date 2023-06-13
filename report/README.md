@@ -21,6 +21,7 @@
 3. Разработать функции, реализующие построение и вывод АСТ (AST Abstract syntax tree). Вывод АСТ осуществить в файл.
 4. По АСТ построить представление исходной программы (см. п. 1) в виде триад. По согласованию с преподавателем можно использовать другие формы линеаризации АСТ.
 
+# Реализация
 ### Вариант 4
 ```
 <Программа> ::= <Объявление переменных> <Описание вычислений>
@@ -89,15 +90,16 @@ Var a, b, c;
 Begin
 	a := -2;
 	b := a;
-	c := ( a + b ) / 5;
-	IF ( a > c ) THEN a = 0;
+	c := a + b / 5;
 	c := a == b;
 	b := (b - c)* a;
-	IF (b > c) THEN a = 0;
-	ELSE a = -1;
-
-	if (a < c) THEN a = 10;
-	ELSE a = -10;
+	IF (b > c) THEN 
+	a := 0; 
+	ELSE
+		Begin
+			a := -1;
+		End
+	IF (a < c) THEN a := 10; ELSE a := -10;
 End
 ```
 
@@ -105,4 +107,159 @@ End
 
 [Не корректные программы](incorrecct_prog.md)
 
-## Компиляция программы в ассемблер
+## Программная реализация
+
+Рабочие файлы:
+
+[Конфиг флекса](main.l)
+
+[Конфиг бизона](main.y)
+
+[Си код построения дерева. Там же его печать и ассемблер](ast.c)
+
+[Общий заголовочный файл](ast.h)
+
+## Cборка
+
+Установить `flex` и `bison`, ещё мне понадобилась библиотека: `libasan.so`
+
+Перейти в папку проекта и выполнить команду `make`.
+
+Появится файл `build_ast` его можно запустить командой `./build_ast`.
+
+Он построит AST дерево в [ast.txt](ast.txt) и ассемблер в [asm.txt](asm.txt)
+
+### AST дерево
+[Файл с деревом](ast.txt)
+```
+programm
+	a
+		b
+			c
+	calc
+		calc
+			:=
+				a
+				-
+					#(2)
+			:=
+				b
+				a
+			:=
+				c
+				+
+					a
+					/
+						b
+						#(5)
+			:=
+				c
+				==
+					a
+					b
+			:=
+				b
+				*
+					*
+						b
+						c
+					a
+			if
+				>
+					b
+					c
+				:=
+					a
+					#(0)
+				calc
+					:=
+						a
+						-
+							#(1)
+			if
+				<
+					a
+					c
+				:=
+					a
+					#(10)
+				:=
+					a
+					-
+						#(10)
+
+```
+
+
+### Компиляция программы в ассемблер
+[Файл с ассемблером](asm.txt)
+
+```
+jal x1, MAIN
+a:
+data 0 * 1
+b:
+data 0 * 1
+c:
+data 0 * 1
+MAIN:
+lw x1, x0, 1
+addi x0, x0, 2
+sub x1, x0, x1
+sw x0, 1, x1
+lw x1, x0, 2
+lw x1, x0, 1
+sw x0, 2, x1
+lw x1, x0, 3
+lw x2, x0, 1
+lw x4, x0, 2
+addi x5, x0, 5
+div x3, x4, x5
+add x1, x2, x3
+sw x0, 3, x1
+lw x1, x0, 3
+lw x2, x0, 1
+lw x3, x0, 2
+seq x1, x2, x3
+sw x0, 3, x1
+lw x1, x0, 2
+lw x3, x0, 2
+lw x4, x0, 3
+mul x2, x3, x4
+lw x5, x0, 1
+mul x1, x2, x5
+sw x0, 2, x1
+lw x2, x0, 2
+lw x3, x0, 3
+slt x1, x3, x2
+beq x0, x1, IF_THEN_1
+jal x0, IF_ELSE_1
+IF_THEN_1:
+lw x1, x0, 1
+addi x1, x0, 0
+sw x0, 1, x1
+jal x0, IF_END_1
+IF_ELSE_1:
+lw x1, x0, 1
+addi x0, x0, 1
+sub x1, x0, x1
+sw x0, 1, x1
+IF_END_1:
+lw x2, x0, 1
+lw x3, x0, 3
+slt x1, x2, x3
+beq x0, x1, IF_THEN_2
+jal x0, IF_ELSE_2
+IF_THEN_2:
+lw x1, x0, 1
+addi x1, x0, 10
+sw x0, 1, x1
+jal x0, IF_END_2
+IF_ELSE_2:
+lw x1, x0, 1
+addi x0, x0, 10
+sub x1, x0, x1
+sw x0, 1, x1
+IF_END_2:
+ebreak
+```

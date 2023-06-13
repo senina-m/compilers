@@ -6,61 +6,62 @@ data 0 * 1
 c:
 data 0 * 1
 MAIN:
-lw x1, x0, 1
+lw x1, x0, -1
 addi x0, x0, 2
 sub x1, x0, x1
-sw x0, 1, x1
-lw x1, x0, 2
-lw x1, x0, 1
-sw x0, 2, x1
-lw x1, x0, 3
-lw x2, x0, 1
-lw x4, x0, 2
+sw x0, -1, x1
+lw x1, x0, -1
+lw x1, x0, -1
+sw x0, -1, x1
+lw x1, x0, -1
+lw x2, x0, -1
+lw x4, x0, -1
 addi x5, x0, 5
 div x3, x4, x5
 add x1, x2, x3
-sw x0, 3, x1
-lw x1, x0, 3
-lw x2, x0, 1
-lw x3, x0, 2
+sw x0, -1, x1
+lw x1, x0, -1
+lw x2, x0, -1
+lw x3, x0, -1
 seq x1, x2, x3
-sw x0, 3, x1
-lw x1, x0, 2
-lw x3, x0, 2
-lw x4, x0, 3
+sw x0, -1, x1
+lw x1, x0, -1
+lw x3, x0, -1
+lw x4, x0, -1
 mul x2, x3, x4
-lw x5, x0, 1
+lw x5, x0, -1
 mul x1, x2, x5
-sw x0, 2, x1
-lw x2, x0, 2
-lw x3, x0, 3
+sw x0, -1, x1
+lw x2, x0, -1
+lw x3, x0, -1
 slt x1, x3, x2
 beq x0, x1, IF_THEN_1
 jal x0, IF_ELSE_1
 IF_THEN_1:
-lw x1, x0, 1
+lw x1, x0, -1
 addi x1, x0, 0
-sw x0, 1, x1
+sw x0, -1, x1
 jal x0, IF_END_1
 IF_ELSE_1:
-lw x1, x0, 1
+lw x1, x0, -1
 addi x0, x0, 1
 sub x1, x0, x1
-sw x0, 1, x1
+sw x0, -1, x1
 IF_END_1:
-lw x2, x0, 1
-lw x3, x0, 3
+lw x2, x0, -1
+lw x3, x0, -1
 slt x1, x2, x3
 beq x0, x1, IF_THEN_2
 jal x0, IF_ELSE_2
 IF_THEN_2:
-lw x1, x0, 1
+lw x1, x0, -1
 addi x1, x0, 10
-sw x0, 1, x1
+sw x0, -1, x1
 jal x0, IF_END_2
 IF_ELSE_2:
-lw x1, x0, 1
+lw x1, x0, -1
 addi x0, x0, 10
 sub x1, x0, x1
-sw x0, 1, x1
+sw x0, -1, x1
 IF_END_2:
+ebreak
