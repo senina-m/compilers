@@ -118,63 +118,63 @@ static void add_var(char* var, int adress){
 int print_asm_expr(FILE* f, Node *node, int ind) {
     printf("expr: %s\n", node->name);
     switch (node->name[0]){
-    case '#': {
-        fprintf(f, "addi x%d, x0, %d\n", ind, node->val);
-        return ind + 1;
-    }
-    case '+': {
-        int ind1 = print_asm_expr(f, node->children[0], ind + 1);
-        int ind2 = print_asm_expr(f, node->children[1], ind1);
-        fprintf(f, "add x%d, x%d, x%d\n", ind, ind + 1, ind1);
-        return ind2;
-    }
-    case '-': {
-        if (node->children_num == 1){
-            int ind = print_asm_expr(f, node->children[0], ind);
-            fprintf(f, "sub x%d, x0, x%d\n", ind, ind);
-            return ind;
-        }else{
+        case '#': {
+            fprintf(f, "addi x%d, x0, %d\n", ind, node->val);
+            return ind + 1;
+        }
+        case '+': {
             int ind1 = print_asm_expr(f, node->children[0], ind + 1);
             int ind2 = print_asm_expr(f, node->children[1], ind1);
-            fprintf(f, "sub x%d, x%d, x%d\n", ind, ind + 1, ind1);
+            fprintf(f, "add x%d, x%d, x%d\n", ind, ind + 1, ind1);
             return ind2;
         }
-    }
-    case '*': {
-        int ind1 = print_asm_expr(f, node->children[0], ind + 1);
-        int ind2 = print_asm_expr(f, node->children[1], ind1);
-        fprintf(f, "mul x%d, x%d, x%d\n", ind, ind + 1, ind1);
-        return ind2;
-    }
-    case '/': {
-        int ind1 = print_asm_expr(f, node->children[0], ind + 1);
-        int ind2 = print_asm_expr(f, node->children[1], ind1);
-        fprintf(f, "div x%d, x%d, x%d\n", ind, ind + 1, ind1);
-        return ind2;
-    }
-    case '>': {
-        int ind1 = print_asm_expr(f, node->children[0], ind + 1);
-        int ind2 = print_asm_expr(f, node->children[1], ind1);
-        fprintf(f, "slt x%d, x%d, x%d\n", ind, ind1, ind + 1);
-        return ind2;
-    }
-    case '<': {
-        int ind1 = print_asm_expr(f, node->children[0], ind + 1);
-        int ind2 = print_asm_expr(f, node->children[1], ind1);
-        fprintf(f, "slt x%d, x%d, x%d\n", ind, ind + 1, ind1);
-        return ind2;
-    }
-    case '=': {
-        int ind1 = print_asm_expr(f, node->children[0], ind + 1);
-        int ind2 = print_asm_expr(f, node->children[1], ind1);
-        fprintf(f, "seq x%d, x%d, x%d\n", ind, ind + 1, ind1);
-        return ind2;
+        case '-': {
+            if (node->children_num == 1){
+                int ind = print_asm_expr(f, node->children[0], ind);
+                fprintf(f, "sub x%d, x0, x%d\n", ind, ind);
+                return ind;
+            }else{
+                int ind1 = print_asm_expr(f, node->children[0], ind + 1);
+                int ind2 = print_asm_expr(f, node->children[1], ind1);
+                fprintf(f, "sub x%d, x%d, x%d\n", ind, ind + 1, ind1);
+                return ind2;
+            }
+        }
+        case '*': {
+            int ind1 = print_asm_expr(f, node->children[0], ind + 1);
+            int ind2 = print_asm_expr(f, node->children[1], ind1);
+            fprintf(f, "mul x%d, x%d, x%d\n", ind, ind + 1, ind1);
+            return ind2;
+        }
+        case '/': {
+            int ind1 = print_asm_expr(f, node->children[0], ind + 1);
+            int ind2 = print_asm_expr(f, node->children[1], ind1);
+            fprintf(f, "div x%d, x%d, x%d\n", ind, ind + 1, ind1);
+            return ind2;
+        }
+        case '>': {
+            int ind1 = print_asm_expr(f, node->children[0], ind + 1);
+            int ind2 = print_asm_expr(f, node->children[1], ind1);
+            fprintf(f, "slt x%d, x%d, x%d\n", ind, ind1, ind + 1);
+            return ind2;
+        }
+        case '<': {
+            int ind1 = print_asm_expr(f, node->children[0], ind + 1);
+            int ind2 = print_asm_expr(f, node->children[1], ind1);
+            fprintf(f, "slt x%d, x%d, x%d\n", ind, ind + 1, ind1);
+            return ind2;
+        }
+        case '=': {
+            int ind1 = print_asm_expr(f, node->children[0], ind + 1);
+            int ind2 = print_asm_expr(f, node->children[1], ind1);
+            fprintf(f, "seq x%d, x%d, x%d\n", ind, ind + 1, ind1);
+            return ind2;
 
-    } default: {
-        printf("Load word: %s to x%d\n", node->name, get_var(node->name));
-        fprintf(f, "lw x%d, x0, %d\n", ind, get_var(node->name));
-        return ind + 1;
-    }
+        } default: {
+            printf("Load word: %s to x%d\n", node->name, get_var(node->name));
+            fprintf(f, "lw x%d, x0, %d\n", ind, get_var(node->name));
+            return ind + 1;
+        }
     }
     return ind;
 }
@@ -201,7 +201,6 @@ void print_asm(FILE* f, Node* node) {
         print_vars();
         fprintf(f, "MAIN:\n");
 
-        // fprintf(f, "jal x1, MAIN\n");
         print_asm(f, node->children[1]);
 
     }    else if (!strcmp(node->name, "calc")){
@@ -216,15 +215,24 @@ void print_asm(FILE* f, Node* node) {
         print_asm_expr(f, node->children[1], 1);    
         fprintf(f, "sw x0, %d, x1\n", get_var(node->children[0]->name));
 
-    }else if (!strcmp(node->name, "IF")){
+    }else if (!strcmp(node->name, "if")){
         if_num++;
 
-        //todo print expr JMP to IF_THEN_%d or IF_ELSE_%d
+        int ind = print_asm_expr(f, node->children[0], 1);
+        fprintf(f, "beq x0, x1, IF_THEN_%d\n", if_num);
+        fprintf(f, "jal x0, IF_ELSE_%d\n", if_num);
 
         fprintf(f, "IF_THEN_%d:\n", if_num);
-        int ind1 = print_asm_expr(f, node->children[1], 1);
+        printf("node^ %s\n", node->children[1]->name);
+        printf("node^^ %s\n", node->children[1]->children[0]->name);
+        printf("node^^ %s\n", node->children[1]->children[1]->name);
+        print_asm(f, node->children[1]);
+        fprintf(f, "jal x0, IF_END_%d\n", if_num);
+
         fprintf(f, "IF_ELSE_%d:\n", if_num);
-        int ind2 = print_asm_expr(f, node->children[2], ind1);
+        print_asm(f, node->children[2]);
+        
+        fprintf(f, "IF_END_%d:\n", if_num);
     }
 }
 
