@@ -79,30 +79,35 @@ typedef struct vars_adresses {
 
 static Vars_addr* table = NULL;
 
-static int get_var(char* var)
-{
+static void print_vars(){
     Vars_addr* table_node = table;
-    while (table_node != NULL)
-    {
+    printf("vars list: ");
+    while (table_node != NULL){
+        printf("%s, ", table_node->var);
+        table_node = table_node->next;
+    }
+    printf("\n");
+}
+
+static int get_var(char* var){
+    Vars_addr* table_node = table;
+    while (table_node != NULL){
         if (strcmp(table_node->var, var) == 0)
             return table_node->addr;
-        table_node = table_node;
+        table_node = table_node->next;
     }
     return -1;
 }
 
-static void add_var(char* var, int adress)
-{
-    if (table == NULL)
-    {
+static void add_var(char* var, int adress){
+    if (table == NULL){
         table = mmalloc(Vars_addr);
         table->next = NULL;
         table->var = var;
         table->addr = adress;
     } else {
-        struct vars_adresses* table_cur = table;
-        while (table_cur->next != NULL)
-            table_cur = table_cur->next;
+        Vars_addr* table_cur = table;
+        while (table_cur->next != NULL) table_cur = table_cur->next;
         table_cur->next = mmalloc(Vars_addr);
         table_cur->next->next = NULL;
         table_cur->next->var = var;
@@ -111,6 +116,7 @@ static void add_var(char* var, int adress)
 }
 
 int print_asm_expr(FILE* f, Node *node, int ind) {
+    printf("expr: %s\n", node->name);
     switch (node->name[0]){
     case '#': {
         fprintf(f, "addi x%d, x0, %d\n", ind, node->val);
@@ -124,8 +130,8 @@ int print_asm_expr(FILE* f, Node *node, int ind) {
     }
     case '-': {
         if (node->children_num == 1){
-            int ind = print_asm_expr(f, node->children[0], ind + 1);
-            fprintf(f, "sub x%d, x0, x%d\n", ind, ind + 1);
+            int ind = print_asm_expr(f, node->children[0], ind);
+            fprintf(f, "sub x%d, x0, x%d\n", ind, ind);
             return ind;
         }else{
             int ind1 = print_asm_expr(f, node->children[0], ind + 1);
@@ -147,6 +153,7 @@ int print_asm_expr(FILE* f, Node *node, int ind) {
         return ind2;
     }
     default: {
+        printf("Load word: %s to x%d\n", node->name, get_var(node->name));
         fprintf(f, "lw x%d, x0, %d\n", ind, get_var(node->name));
         return ind + 1;
     }
@@ -161,6 +168,8 @@ static void load_vars(Node* node, FILE* f, int num){
         load_vars(node->children[0], f, num + 1);
 }
 
+int if_num = 0;
+
 void print_asm(FILE* f, Node* node) {
     if (node == NULL) return;
 
@@ -171,6 +180,7 @@ void print_asm(FILE* f, Node* node) {
 
         printf("vars \n");
         load_vars(node->children[0], f, 1);
+        print_vars();
         fprintf(f, "MAIN:\n");
 
         // fprintf(f, "jal x1, MAIN\n");
@@ -178,20 +188,29 @@ void print_asm(FILE* f, Node* node) {
 
     }    else if (!strcmp(node->name, "calc")){
         printf("calc \n");
-        if (node->children_num != 0) print_asm(f, node->children[0]);
+        for (int i = 0; i < node->children_num; i++){
+            print_asm(f, node->children[i]);
+        }
 
     }else if (!strcmp(node->name, ":=")){
         printf("assign \n");
         print_asm_expr(f, node->children[0], 1);
+        print_asm_expr(f, node->children[1], 1);    
         fprintf(f, "sw x0, %d, x1\n", get_var(node->children[0]->name));
-        print_asm(f, node->children[0]);    
 
     }else if (!strcmp(node->name, "IF")){
-        fprintf(f, "IF STATEMENT\n");
+        if_num++;
+
+        //todo print expr JMP to IF_THEN_%d or IF_ELSE_%d
+
+        fprintf(f, "IF_THEN_%d:\n", if_num);
+        int ind1 = print_asm_expr(f, node->children[1], 1);
+        fprintf(f, "IF_ELSE_%d:\n", if_num);
+        int ind2 = print_asm_expr(f, node->children[2], ind1);
     }
 }
 
 int main() {
   printf("> "); 
-  return yyparse(FILENAME_AST, FILENAME_ASM);
+  return yyparse();
 }

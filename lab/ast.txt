@@ -1,10 +1,11 @@
 programm
 	a
+		b
 	calc
 		:=
 			a
 			#(3)
 		:=
-			a
+			b
 			-
 				#(6)

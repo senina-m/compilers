@@ -20,6 +20,8 @@ typedef struct Node {
 void yyerror(char *s, ...);
 extern int yylineno;
 int yylex();
+int yyparse (void);
+
 
 Node* create_node(char* name);
 Node* create_node_int(int val);
