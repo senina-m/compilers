@@ -13,5 +13,5 @@ Begin
 End
 
 Var a, b;
-a := 3;
-b := -6;
+a := b + 5;
+b := 4 > 3;

@@ -152,7 +152,25 @@ int print_asm_expr(FILE* f, Node *node, int ind) {
         fprintf(f, "div x%d, x%d, x%d\n", ind, ind + 1, ind1);
         return ind2;
     }
-    default: {
+    case '>': {
+        int ind1 = print_asm_expr(f, node->children[0], ind + 1);
+        int ind2 = print_asm_expr(f, node->children[1], ind1);
+        fprintf(f, "slt x%d, x%d, x%d\n", ind, ind1, ind + 1);
+        return ind2;
+    }
+    case '<': {
+        int ind1 = print_asm_expr(f, node->children[0], ind + 1);
+        int ind2 = print_asm_expr(f, node->children[1], ind1);
+        fprintf(f, "slt x%d, x%d, x%d\n", ind, ind + 1, ind1);
+        return ind2;
+    }
+    case '=': {
+        int ind1 = print_asm_expr(f, node->children[0], ind + 1);
+        int ind2 = print_asm_expr(f, node->children[1], ind1);
+        fprintf(f, "seq x%d, x%d, x%d\n", ind, ind + 1, ind1);
+        return ind2;
+
+    } default: {
         printf("Load word: %s to x%d\n", node->name, get_var(node->name));
         fprintf(f, "lw x%d, x0, %d\n", ind, get_var(node->name));
         return ind + 1;
