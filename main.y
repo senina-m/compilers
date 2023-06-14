@@ -60,7 +60,7 @@ assignment: IDENT ASSIGN expression     {$$ = create_node(":=");
 expression: operand                     {$$ = $1;}
     | LCBR expression RCBR              {$$ = $2;}
     | MINUS expression                  {$$ = create_node("-"); add_child($$, $2);}
-    | expression MINUS expression       {$$ = create_node("*"); add_child($$, $1); add_child($$, $3);}
+    | expression MINUS expression       {$$ = create_node("-"); add_child($$, $1); add_child($$, $3);}
     | expression PLUS expression        {$$ = create_node("+"); add_child($$, $1); add_child($$, $3);}
     | expression MULT expression        {$$ = create_node("*"); add_child($$, $1); add_child($$, $3);}
     | expression DIV expression         {$$ = create_node("/"); add_child($$, $1); add_child($$, $3);}
